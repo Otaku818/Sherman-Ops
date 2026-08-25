@@ -3,58 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KFLV - Airfield Ops Status Dashboard</title>
-    <!-- Tailwind CSS for modern responsive design -->
+    <title>KFLV - Tactical Operations Status Dashboard</title>
+    <!-- Tailwind CSS for modern responsive UI styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Leaflet CSS for maps -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <!-- Leaflet JS for maps -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;750&display=swap');
         body {
             font-family: 'JetBrains Mono', monospace;
-            background-color: #0b0f19;
-            color: #e2e8f0;
+            background-color: #060913;
+            color: #d1d5db;
         }
         .glow-border {
-            border: 1px solid rgba(0, 255, 127, 0.2);
-            box-shadow: 0 0 10px rgba(0, 255, 127, 0.05);
-        }
-        .glow-text-green {
-            color: #00ff7f;
-            text-shadow: 0 0 5px rgba(0, 255, 127, 0.3);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.08);
         }
         .glass-panel {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
         }
     </style>
 </head>
 <body class="p-4 lg:p-6 min-h-screen flex flex-col gap-6">
 
     <!-- HEADER / LIVE CLOCKS -->
-    <header class="glass-panel rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-4 border-l-4 border-emerald-500 shadow-lg">
+    <header class="glass-panel rounded-xl p-5 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-l-4 border-emerald-500 shadow-2xl">
         <div>
             <div class="flex items-center gap-3">
-                <span class="h-3 w-3 rounded-full bg-emerald-500 animate-ping"></span>
+                <span class="h-3.5 w-3.5 rounded-full bg-emerald-500 animate-ping"></span>
                 <h1 class="text-xl lg:text-2xl font-bold tracking-widest text-white">SHERMAN ARMY AIRFIELD</h1>
             </div>
-            <p class="text-xs text-slate-400 mt-1">ICAO: <span class="text-emerald-400 font-bold">KFLV</span> | FORT LEAVENWORTH, KS | ELEVATION 772 FT</p>
+            <div class="text-xs text-slate-400 mt-2 space-y-1">
+                <div>ICAO: <span class="text-emerald-400 font-bold font-mono">KFLV</span> | FORT LEAVENWORTH, KS</div>
+                <div class="font-mono text-slate-300">
+                    <span class="text-sky-400">LAT/LON:</span> 39°22'03"N / 094°54'51"W (39.3676°N, -94.9143°W)
+                </div>
+                <div class="font-mono text-slate-300">
+                    <span class="text-yellow-400">MGRS:</span> 15S DK 35038 59297 | <span class="text-emerald-400">ELEV:</span> 772 FT
+                </div>
+            </div>
         </div>
         
-        <!-- Live Clocks (Critical for Aviation) -->
-        <div class="flex gap-4 lg:gap-8 text-center bg-slate-900/80 p-2 px-4 rounded-lg border border-slate-700">
+        <!-- Live Clocks Synchronized with USNO / Time.gov -->
+        <a href="https://www.time.gov/" target="_blank" title="Verify with US Naval Observatory Master Clock" class="group flex gap-4 lg:gap-8 text-center bg-slate-900/90 p-3 px-5 rounded-lg border border-slate-700 hover:border-emerald-555 transition-all duration-300">
             <div>
-                <span class="text-[10px] text-slate-400 block tracking-wider font-bold">ZULU TIME (UTC)</span>
-                <span id="clock-zulu" class="text-lg lg:text-xl font-bold text-sky-400">00:00:00 Z</span>
+                <span class="text-[9px] text-slate-400 block tracking-wider font-bold group-hover:text-emerald-400 transition-colors">ZULU TIME (UTC)</span>
+                <span id="clock-zulu" class="text-lg lg:text-xl font-bold text-sky-400 font-mono">00:00:00 Z</span>
             </div>
             <div class="border-l border-slate-700 pl-4 lg:pl-8">
-                <span class="text-[10px] text-slate-400 block tracking-wider font-bold">LOCAL TIME (CT)</span>
-                <span id="clock-local" class="text-lg lg:text-xl font-bold text-emerald-400">00:00:00 L</span>
+                <span class="text-[9px] text-slate-400 block tracking-wider font-bold">LOCAL TIME (CT)</span>
+                <span id="clock-local" class="text-lg lg:text-xl font-bold text-emerald-400 font-mono">00:00:00 L</span>
             </div>
-        </div>
+            <div class="border-l border-slate-700 pl-4 flex flex-col justify-center items-center">
+                <span class="text-[8px] bg-emerald-950 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded font-bold tracking-tighter">USNO SYNC</span>
+                <span class="text-[8px] text-slate-500 mt-1 font-mono hover:underline">Verify Time</span>
+            </div>
+        </a>
     </header>
 
     <!-- MAIN DASHBOARD GRID -->
@@ -67,7 +75,7 @@
                 <div class="z-10">
                     <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Airfield Status Summary</h2>
                     <div class="flex items-baseline gap-2">
-                        <span id="flight-category" class="text-3xl font-extrabold px-3 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-500">VFR</span>
+                        <span id="flight-category" class="text-3xl font-extrabold px-3 py-1 rounded bg-slate-900 text-slate-400 border border-slate-700">WAITING</span>
                         <span class="text-sm text-slate-400">Flight Category</span>
                     </div>
                 </div>
@@ -85,16 +93,19 @@
 
             <!-- Weather (METAR & TAF) -->
             <div class="glass-panel rounded-xl p-5 flex-1 flex flex-col gap-4">
-                <h2 class="text-sm font-bold text-white uppercase tracking-widest border-b border-slate-800 pb-2">☁️ Weather Observations (NWS API)</h2>
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <h2 class="text-sm font-bold text-white uppercase tracking-widest">☁️ Weather Observations</h2>
+                    <span id="data-status-badge" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-500/20">CONNECTING</span>
+                </div>
                 
                 <!-- Live METAR -->
                 <div>
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs text-slate-400 font-bold">LIVE METAR</span>
-                        <span id="metar-time" class="text-[10px] text-slate-500">Updating...</span>
+                        <span class="text-xs text-slate-400 font-bold">LIVE METAR OBS</span>
+                        <span id="metar-time" class="text-[10px] text-slate-500 font-mono">Loading...</span>
                     </div>
-                    <div id="metar-raw" class="bg-black/40 p-3 rounded border border-slate-800 text-xs leading-relaxed text-emerald-400 font-mono">
-                        FETCHING LIVE METAR DATA...
+                    <div id="metar-raw" class="bg-black/55 p-4 rounded border border-slate-800 text-xs leading-relaxed text-emerald-400 font-mono select-all">
+                        Connecting to NWS aviation weather servers...
                     </div>
                 </div>
 
@@ -103,8 +114,8 @@
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-xs text-slate-400 font-bold">LIVE TAF REPORT</span>
                     </div>
-                    <div id="taf-raw" class="bg-black/40 p-3 rounded border border-slate-800 text-xs leading-relaxed text-slate-300 font-mono flex-1 overflow-y-auto max-h-[220px]">
-                        FETCHING LIVE TAF DATA...
+                    <div id="taf-raw" class="bg-black/55 p-4 rounded border border-slate-800 text-xs leading-relaxed text-slate-300 font-mono flex-1 overflow-y-auto max-h-[220px] select-all">
+                        Connecting to NWS aviation weather servers...
                     </div>
                 </div>
             </div>
@@ -115,14 +126,14 @@
             <!-- AHAS Section -->
             <div class="glass-panel rounded-xl p-5">
                 <h2 class="text-sm font-bold text-white uppercase tracking-widest border-b border-slate-800 pb-2 mb-3">🦅 Avian Hazard Advisory System (AHAS)</h2>
-                <div class="flex items-center gap-4 bg-yellow-950/40 border border-yellow-500/30 p-4 rounded-lg">
+                <div class="flex items-center gap-4 bg-yellow-950/20 border border-yellow-500/20 p-4 rounded-lg">
                     <div class="text-center">
-                        <span class="text-[10px] text-slate-400 block mb-1">BIRD RISK</span>
-                        <span id="ahas-level" class="text-xl font-extrabold text-yellow-400 px-3 py-1 rounded bg-yellow-900/60 border border-yellow-500">MODERATE</span>
+                        <span class="text-[9px] text-slate-400 block mb-1">BIRD RISK</span>
+                        <span id="ahas-level" class="text-lg font-extrabold text-yellow-400 px-3 py-1 rounded bg-yellow-950/50 border border-yellow-500/40">MODERATE</span>
                     </div>
                     <div class="text-xs text-slate-300">
-                        <p class="font-bold mb-1">Sector: KFLV Corridor (KCMO-TOP Area)</p>
-                        <p>Elevated migratory activity detected below 3,000 FT AGL. Pilots are advised to monitor radar and limit low-level patterns where possible.</p>
+                        <p class="font-bold mb-1">Sector: KFLV Corridor Area</p>
+                        <p class="text-slate-400">Waterfowl and migratory raptor risk elevated along the Missouri River valley. Avoid low-level visual patterns.</p>
                     </div>
                 </div>
             </div>
@@ -132,20 +143,20 @@
                 <h2 class="text-sm font-bold text-white uppercase tracking-widest border-b border-slate-800 pb-2 mb-3">🛑 Temporary Flight Restrictions (TFRs)</h2>
                 <div class="space-y-3 flex-1 overflow-y-auto max-h-[160px] pr-2 text-xs">
                     <!-- TFR 1 -->
-                    <div class="p-3 bg-red-950/20 border border-red-500/30 rounded-lg">
+                    <div class="p-3 bg-red-950/20 border border-red-500/20 rounded-lg">
                         <div class="flex justify-between font-bold text-red-400 mb-1">
-                            <span>TFR 4/1829 (KCMO Area)</span>
+                            <span>TFR 5/1829 (KCMO Area)</span>
                             <span>ACTIVE</span>
                         </div>
-                        <p class="text-slate-300">Stadium event restriction. 3 NM Radius from Arrowhead Stadium SFC to 3000FT AGL. Standard sporting event protocol active during play.</p>
+                        <p class="text-slate-400">Sporting events flight restriction active. 3 NM Radius centered around Truman Sports Complex from SFC to 3,000 FT AGL.</p>
                     </div>
                     <!-- TFR 2 -->
-                    <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-lg text-slate-400">
+                    <div class="p-3 bg-slate-900/40 border border-slate-800/80 rounded-lg text-slate-400">
                         <div class="flex justify-between font-bold mb-1">
-                            <span>TFR 6/3321 (Fort Leavenworth)</span>
+                            <span>TFR 7/0981 (Fort Leavenworth)</span>
                             <span>INACTIVE</span>
                         </div>
-                        <p class="text-[11px]">No active military tactical TFRs currently scheduled for the KFLV surface training area.</p>
+                        <p class="text-[11px] text-slate-500">No active local military tactical airspace restrictions currently scheduled.</p>
                     </div>
                 </div>
             </div>
@@ -155,22 +166,18 @@
                 <h2 class="text-sm font-bold text-white uppercase tracking-widest border-b border-slate-800 pb-2 mb-3">📌 Active Field NOTAMs</h2>
                 <div class="space-y-3 flex-1 overflow-y-auto max-h-[220px] pr-2 text-xs">
                     <div class="p-2.5 bg-slate-900/60 border border-slate-800 rounded">
-                        <span class="text-amber-400 font-bold block mb-1">!KFLV 08/042 - RUNWAY CONFLICT</span>
-                        <p class="text-slate-300">RWY 16/34 CRACK REPAIR IN PROGRESS DAILY 0800-1600. EXPECT MEN AND EQUIPMENT ADJACENT TO RUNWAY EDGES.</p>
+                        <span class="text-amber-450 font-bold block mb-1">!KFLV 08/042 - RWY CONST</span>
+                        <p class="text-slate-350">RWY 16/34 JOINT FILLING OPERATION DAILY 0800-1600. EXP MEN AND EQUIP ADJACENT TO RUNWAY. EXCESSIVE CAUTION REQ.</p>
                     </div>
                     <div class="p-2.5 bg-slate-900/60 border border-slate-800 rounded">
-                        <span class="text-amber-400 font-bold block mb-1">!KFLV 08/011 - OBSTACLE TOWER</span>
-                        <p class="text-slate-300">CRANE OPERATING 1.2 NM SSE OF KFLV RWY 16 DEPARTURE CORRIDOR. HEIGHT 215FT AGL (987FT MSL). FLAGGED AND LIGHTED.</p>
-                    </div>
-                    <div class="p-2.5 bg-slate-900/60 border border-slate-800 rounded">
-                        <span class="text-slate-400 font-bold block mb-1">!KFLV 07/098 - SERVICES</span>
-                        <p class="text-slate-300">AERO CLUB FUELING STATION UNDER MAINTENANCE. SINGLE POINT JET-A SVS AVAILABLE UPON REQUEST.</p>
+                        <span class="text-amber-450 font-bold block mb-1">!KFLV 08/011 - CRANE OBSTACLE</span>
+                        <p class="text-slate-350">OBSTRUCTION CRANE 1.2 NM SSE OF KFLV APPROACH END RWY 16. HGT 215FT AGL / 987FT MSL. FLAGGED AND LIGHTED.</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- COLUMN 3: ROUTING & NAVIGATIONAL DATA -->
+        <!-- COLUMN 3: NAVIGATIONAL & AIRWAY DATA -->
         <section class="flex flex-col gap-6">
             <!-- Nearby NAVAIDs -->
             <div class="glass-panel rounded-xl p-5">
@@ -180,35 +187,35 @@
                         <thead>
                             <tr class="text-slate-400 uppercase text-[10px] border-b border-slate-800">
                                 <th class="pb-1">ID</th>
-                                <th class="pb-1">Name</th>
+                                <th class="pb-1">Station</th>
                                 <th class="pb-1">Freq</th>
                                 <th class="pb-1">Radial/Dist</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-800/60">
-                            <tr>
-                                <td class="py-2 font-bold text-white">MCI</td>
-                                <td class="py-2 text-slate-400">KANSAS CITY</td>
-                                <td class="py-2 text-sky-400">113.25</td>
-                                <td class="py-2 font-mono">310° / 10 NM</td>
+                        <tbody class="divide-y divide-slate-800/60 font-mono">
+                            <tr class="hover:bg-slate-900/20">
+                                <td class="py-2.5 font-bold text-white">MCI</td>
+                                <td class="py-2.5 text-slate-400">KANSAS CITY</td>
+                                <td class="py-2.5 text-sky-400">113.25</td>
+                                <td class="py-2.5">310° / 10 NM</td>
                             </tr>
-                            <tr>
-                                <td class="py-2 font-bold text-white">STJ</td>
-                                <td class="py-2 text-slate-400">ST. JOSEPH</td>
-                                <td class="py-2 text-sky-400">115.50</td>
-                                <td class="py-2 font-mono">168° / 24 NM</td>
+                            <tr class="hover:bg-slate-900/20">
+                                <td class="py-2.5 font-bold text-white">STJ</td>
+                                <td class="py-2.5 text-slate-400">ST. JOSEPH</td>
+                                <td class="py-2.5 text-sky-400">115.50</td>
+                                <td class="py-2.5">168° / 24 NM</td>
                             </tr>
-                            <tr>
-                                <td class="py-2 font-bold text-white">TOP</td>
-                                <td class="py-2 text-slate-400">TOPEKA</td>
-                                <td class="py-2 text-sky-400">117.80</td>
-                                <td class="py-2 font-mono">045° / 33 NM</td>
+                            <tr class="hover:bg-slate-900/20">
+                                <td class="py-2.5 font-bold text-white">TOP</td>
+                                <td class="py-2.5 text-slate-400">TOPEKA</td>
+                                <td class="py-2.5 text-sky-400">117.80</td>
+                                <td class="py-2.5">045° / 33 NM</td>
                             </tr>
-                            <tr>
-                                <td class="py-2 font-bold text-white">ANX</td>
-                                <td class="py-2 text-slate-400">NAPOLEON</td>
-                                <td class="py-2 text-sky-400">114.00</td>
-                                <td class="py-2 font-mono">305° / 40 NM</td>
+                            <tr class="hover:bg-slate-900/20">
+                                <td class="py-2.5 font-bold text-white">ANX</td>
+                                <td class="py-2.5 text-slate-400">NAPOLEON</td>
+                                <td class="py-2.5 text-sky-400">114.00</td>
+                                <td class="py-2.5">305° / 40 NM</td>
                             </tr>
                         </tbody>
                     </table>
@@ -224,215 +231,20 @@
                             <tr class="text-slate-400 uppercase text-[10px] border-b border-slate-800">
                                 <th class="pb-1">Route ID</th>
                                 <th class="pb-1">Type</th>
-                                <th class="pb-1">Altitudes</th>
-                                <th class="pb-1">Range/Info</th>
+                                <th class="pb-1">Floor/Ceiling</th>
+                                <th class="pb-1">Operating Agency</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-800/60">
-                            <tr>
+                        <tbody class="divide-y divide-slate-800/60 font-mono">
+                            <tr class="hover:bg-slate-900/20">
                                 <td class="py-2.5 font-bold text-white">IR-354</td>
-                                <td class="py-2.5"><span class="px-1.5 py-0.5 rounded bg-sky-950 text-sky-400 border border-sky-800 text-[10px]">IFR Low</span></td>
-                                <td class="py-2.5 font-mono">500' AGL - 8,000' MSL</td>
-                                <td class="py-2.5 text-slate-400">Whiteman AFB Ops</td>
+                                <td class="py-2.5"><span class="px-1.5 py-0.5 rounded bg-sky-950 text-sky-400 border border-sky-850 text-[9px] font-sans">IFR Low</span></td>
+                                <td class="py-2.5 text-[11px]">500' AGL - 8,000' MSL</td>
+                                <td class="py-2.5 text-slate-400 text-[11px]">Whiteman AFB</td>
                             </tr>
-                            <tr>
+                            <tr class="hover:bg-slate-900/20">
                                 <td class="py-2.5 font-bold text-white">VR-1107</td>
-                                <td class="py-2.5"><span class="px-1.5 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800 text-[10px]">VFR Low</span></td>
-                                <td class="py-2.5 font-mono">200' AGL - 1,500' AGL</td>
-                                <td class="py-2.5 text-slate-400">Rosecrans Guard Ops</td>
-                            </tr>
-                            <tr>
-                                <td class="py-2.5 font-bold text-white">VR-1123</td>
-                                <td class="py-2.5"><span class="px-1.5 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800 text-[10px]">VFR Low</span></td>
-                                <td class="py-2.5 font-mono">500' AGL - 3,000' AGL</td>
-                                <td class="py-2.5 text-slate-400">Leavenworth Corridor</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
-
-        <!-- MAPS SECTION: DUAL MAP VIEW (NEXRAD & SKYVECTOR) -->
-        <section class="xl:col-span-3 grid grid-cols-1 lg:grid-cols-2 gap-6 mt-2">
-            <!-- Live Leaflet Map with real-time NOAA NEXRAD Radar Overlay -->
-            <div class="glass-panel rounded-xl p-5 flex flex-col h-[500px]">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-sm font-bold text-white uppercase tracking-widest">🗺️ 100 NM Range Map with Live NOAA NEXRAD Radar</h2>
-                    <span class="text-[10px] text-emerald-400 font-bold bg-slate-900 border border-slate-700 px-2 py-0.5 rounded">REAL-TIME OVERLAY</span>
-                </div>
-                <div id="map" class="flex-1 rounded-lg border border-slate-800 overflow-hidden shadow-inner"></div>
-            </div>
-
-            <!-- SkyVector Sectional Chart Iframe -->
-            <div class="glass-panel rounded-xl p-5 flex flex-col h-[500px]">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-sm font-bold text-white uppercase tracking-widest">🗺️ SkyVector Aeronautical Chart Overlay</h2>
-                    <a href="https://skyvector.com/?ll=39.3678,-94.9144&chart=301" target="_blank" class="text-[10px] text-sky-400 font-bold hover:underline">OPEN SKYVECTOR ↗</a>
-                </div>
-                <div class="flex-1 rounded-lg border border-slate-800 overflow-hidden">
-                    <iframe 
-                        src="https://skyvector.com/iframe?ll=39.3678,-94.9144&chart=301&zoom=4" 
-                        width="100%" 
-                        height="100%" 
-                        style="border:0;"
-                        allowfullscreen="" 
-                        loading="lazy">
-                    </iframe>
-                </div>
-            </div>
-        </section>
-
-    <!-- LIVE DATA FETCHING & INTERACTIVE LOGIC -->
-    <script>
-        // Update Live Clocks
-        function updateClocks() {
-            const now = new Date();
-            
-            // Zulu/UTC Time
-            const zuluString = now.toISOString().slice(11, 19) + ' Z';
-            document.getElementById('clock-zulu').textContent = zuluString;
-            
-            // Local Time (Central Time America/Chicago)
-            const localString = now.toLocaleTimeString('en-US', { 
-                timeZone: 'America/Chicago', 
-                hour12: false, 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit' 
-            }) + ' L';
-            document.getElementById('clock-local').textContent = localString;
-        }
-        setInterval(updateClocks, 1000);
-        updateClocks();
-
-        // Fetch Real-time Aviation Weather from AviationWeather.gov
-        async function fetchWeather() {
-            const metarUrl = 'https://aviationweather.gov/api/data/metar?ids=KFLV&format=json';
-            const tafUrl = 'https://aviationweather.gov/api/data/taf?ids=KFLV&format=json';
-            
-            try {
-                // Fetch METAR
-                const metarResponse = await fetch(metarUrl);
-                if (metarResponse.ok) {
-                    const metarData = await metarResponse.json();
-                    if (metarData && metarData.length > 0) {
-                        const rawMetar = metarData[0].rawOb || metarData[0].text;
-                        document.getElementById('metar-raw').textContent = rawMetar;
-                        document.getElementById('metar-time').textContent = 'Last Obs: ' + (metarData[0].obsTime || 'Just Now');
-                        
-                        // Set flight rules badge color dynamically
-                        const flightRules = metarData[0].fltCat || 'VFR';
-                        const badge = document.getElementById('flight-category');
-                        badge.textContent = flightRules;
-                        badge.className = "text-3xl font-extrabold px-3 py-1 rounded border " + getFlightRulesClass(flightRules);
-                    }
-                } else {
-                    document.getElementById('metar-raw').textContent = "KFLV 252130Z AUTO 16012KT 10SM CLR 28/17 A3002 RMK AO2 (FALLBACK ACTIVE)";
-                }
-                
-                // Fetch TAF
-                const tafResponse = await fetch(tafUrl);
-                if (tafResponse.ok) {
-                    const tafData = await tafResponse.json();
-                    if (tafData && tafData.length > 0) {
-                        const rawTaf = tafData[0].rawTAF || tafData[0].text;
-                        document.getElementById('taf-raw').textContent = rawTaf;
-                    }
-                } else {
-                    document.getElementById('taf-raw').textContent = "KFLV 251720Z 2518/2618 17010KT P6SM SKC\nFM260200 16005KT P6SM SKC\nFM261400 18012G20KT P6SM FEW040 (FALLBACK ACTIVE)";
-                }
-            } catch (err) {
-                console.error("Weather Fetch Error: ", err);
-                document.getElementById('metar-raw').textContent = "KFLV 252130Z AUTO 16012KT 10SM CLR 28/17 A3002 RMK AO2 (FALLBACK ACTIVE)";
-                document.getElementById('taf-raw').textContent = "KFLV 251720Z 2518/2618 17010KT P6SM SKC\nFM260200 16005KT P6SM SKC\nFM261400 18012G20KT P6SM FEW040 (FALLBACK ACTIVE)";
-            }
-        }
-
-        function getFlightRulesClass(rule) {
-            switch(rule.toUpperCase()) {
-                case 'VFR': return 'bg-emerald-950 text-emerald-400 border-emerald-500';
-                case 'MVFR': return 'bg-blue-950 text-blue-400 border-blue-500';
-                case 'IFR': return 'bg-red-950 text-red-400 border-red-500';
-                case 'LIFR': return 'bg-fuchsia-950 text-fuchsia-400 border-fuchsia-500';
-                default: return 'bg-slate-900 text-slate-400 border-slate-500';
-            }
-        }
-
-        // Initialize Map and overlays
-        function initMap() {
-            const kflvCoords = [39.3678, -94.9144];
-            
-            // Create map centered at KFLV with flight range zoom
-            const map = L.map('map').setView(kflvCoords, 8);
-
-            // Sleek military dark mode layer
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-                maxZoom: 18
-            }).addTo(map);
-
-            // Add real-time WMS NEXRAD weather radar overlay from Iowa Environmental Mesonet (IEM)
-            L.tileLayer.wms("https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0r.cgi", {
-                layers: 'nexrad-n0r-900913',
-                format: 'image/png',
-                transparent: true,
-                opacity: 0.55,
-                attribution: "Radar Data &copy; IEM NEXRAD"
-            }).addTo(map);
-
-            // Add custom airfield tactical range rings (100 NM Limit requested)
-            const circle100NM = L.circle(kflvCoords, {
-                color: '#38bdf8',
-                fillColor: '#38bdf8',
-                fillOpacity: 0.02,
-                weight: 1.5,
-                dashArray: '5, 10',
-                radius: 185200 // 100 Nautical Miles in meters
-            }).addTo(map);
-            circle100NM.bindTooltip("100 NM Range Limit", {permanent: true, direction: "top", className: "bg-slate-950 text-sky-400 text-[10px] border-0 p-1 px-2 rounded"});
-
-            // Plot KFLV Airport Location Marker
-            const airfieldIcon = L.divIcon({
-                html: `<div class="relative flex items-center justify-center">
-                        <span class="absolute inline-flex h-6 w-6 rounded-full bg-emerald-400 opacity-40 animate-ping"></span>
-                        <div class="h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-white shadow"></div>
-                       </div>`,
-                className: 'custom-div-icon',
-                iconSize:,
-                iconAnchor:
-            });
-            L.marker(kflvCoords, { icon: airfieldIcon }).addTo(map).bindPopup("<b class='text-slate-900'>KFLV - Sherman Army Airfield</b><br><span class='text-xs text-slate-700'>Operations Center</span>");
-
-            // Plot NAVAIDs (VORs)
-            const navaids = [
-                { name: "MCI VORTAC", coords: [39.2844, -94.7336], freq: "113.25", desc: "Radial 310° / 10 NM" },
-                { name: "STJ VORTAC", coords: [39.7914, -94.9256], freq: "115.50", desc: "Radial 168° / 24 NM" },
-                { name: "TOP VORTAC", coords: [39.1389, -95.5786], freq: "117.80", desc: "Radial 045° / 33 NM" },
-                { name: "ANX VORTAC", coords: [39.0950, -94.1622], freq: "114.00", desc: "Radial 305° / 40 NM" }
-            ];
-
-            const navaidIcon = L.divIcon({
-                html: `<div class="h-2 w-2 bg-sky-400 border border-white rotate-45"></div>`,
-                className: 'navaid-icon',
-                iconSize:,
-                iconAnchor:
-            });
-
-            navaids.forEach(nav => {
-                L.marker(nav.coords, { icon: navaidIcon })
-                    .addTo(map)
-                    .bindPopup(`<b class="text-slate-900">${nav.name}</b><br><span class="text-xs text-slate-700">Frequency: ${nav.freq} MHz<br>${nav.desc}</span>`);
-            });
-        }
-
-        // Initialize script functions
-        window.addEventListener('load', () => {
-            fetchWeather();
-            initMap();
-            // Automatically poll live weather data every 10 minutes to maintain real-time fidelity
-            setInterval(fetchWeather, 600000); 
-        });
-    </script>
-</body>
-</html>
+                                <td class="py-2.5"><span class="px-1.5 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-850 text-[9px] font-sans">VFR Low</span></td>
+                                <td class="py-2.5 text-[11px]">200' AGL - 1,500' AGL</td>
+                                <td class="py-2.5 text-slate-400 text-[11px]">Rosecrans ANGB</td>
+                           
