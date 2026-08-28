@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KFLV Air Operations Step Desk Dashboard</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://tailwindcss.com"></script>
+    <!-- Chart.js for Graphical Dials and Gauges -->
+    <script src="https://jsdelivr.net"></script>
+    <!-- Leaflet for Map & Overlays -->
+    <link rel="stylesheet" href="https://unpkg.com" />
+    <script src="https://unpkg.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cloudflare.com">
+    <style>
+        .gauge-container { position: relative; width: 100%; height: 140px; }
+        .gauge-label { position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); text-align: center; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col selection:bg-teal-500 selection:text-slate-900">
+
+    <!-- Top Operational Status Header -->
+    <header class="bg-slate-900 border-b border-slate-800 p-4 flex flex-col md:flex-row justify-between items-center gap-4 shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_#10b981]"></div>
+            <div>
+                <h1 class="text-xl font-black tracking-wider text-slate-100 flex items-center gap-2">
+                    SHERMAN ARMY AIRFIELD <span class="text-xs bg-teal-500/20 text-teal-400 px-2 py-0.5 rounded font-mono border border-teal-500/30">KFLV</span>
+                </h1>
+                <p class="text-xs text-slate-400 font-medium">FORT LEAVENWORTH, KS • STEP DESK COMMAND INTERFACE</p>
+            </div>
+        </div>
+        
+        <!-- Live System Chronometers -->
+        <div class="flex flex-wrap items-center gap-3 text-xs font-mono">
+            <div class="bg-slate-950 border border-slate-800 px-3 py-1.5 rounded flex items-center gap-2">
+                <i class="fa-regular fa-clock text-slate-400"></i>
+                <span id="utc-time">UTC: 00:00:00Z</span>
+            </div>
+            <div id="flight-rule-badge" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded font-bold tracking-widest">
+                FLT CAT: VFR
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Grid Dashboard Layout -->
+    <main class="flex-1 grid grid-cols-1 xl:grid-cols-4 p-4 gap-4 overflow-y-auto">
+        
+        <!-- COLUMN 1: VISUAL METEOROLOGICAL GAUGES -->
+        <div class="xl:col-span-1 flex flex-col gap-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col h-full shadow-lg">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-800 pb-2 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-gauge-high text-teal-400"></i> Graphical Weather Instruments
+                </h2>
+
+                <!-- Wind Compass Gauge -->
+                <div class="mb-4 bg-slate-950 border border-slate-800/60 rounded-lg p-3 flex flex-col items-center">
+                    <span class="text-[10px] font-bold tracking-wider text-slate-400 uppercase mb-2">Magnetic Wind Heading</span>
+                    <div class="gauge-container flex justify-center items-center">
+                        <canvas id="chart-wind" width="130" height="130"></canvas>
+                    </div>
+                    <div class="text-center mt-1">
+                        <span id="txt-wind-dir" class="text-lg font-black text-slate-100 font-mono">---°</span>
+                        <span id="txt-wind-spd" class="text-sm font-bold text-teal-400 font-mono"> @ -- KT</span>
+                    </div>
+                </div>
+
+                <!-- Visibility / Altimeter Half-Gauges -->
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="bg-slate-950 border border-slate-800/60 rounded-lg p-3 flex flex-col items-center">
+                        <span class="text-[10px] font-bold tracking-wider text-slate-400 uppercase mb-1">Visibility</span>
+                        <div class="w-24 h-16 relative">
+                            <canvas id="chart-vis"></canvas>
+                        </div>
+                        <span id="txt-vis" class="text-md font-black font-mono text-slate-200 mt-1">-- SM</span>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800/60 rounded-lg p-3 flex flex-col items-center">
+                        <span class="text-[10px] font-bold tracking-wider text-slate-400 uppercase mb-1">Altimeter Baro</span>
+                        <div class="w-24 h-16 relative">
+                            <canvas id="chart-alt"></canvas>
+                        </div>
+                        <span id="txt-alt" class="text-md font-black font-mono text-amber-400 mt-1">--.-- IN</span>
+                    </div>
+                </div>
+
+                <!-- Live Text Input Feeds -->
+                <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 flex-1 flex flex-col">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <span class="text-[10px] font-bold tracking-wider text-amber-500 font-mono uppercase">Live Aviation Weather Center METAR</span>
+                        <span class="w-2 h-2 rounded-full bg-teal-500 animate-ping"></span>
+                    </div>
+                    <p id="raw-metar-text" class="text-xs font-mono text-teal-400 leading-relaxed overflow-y-auto max-h-[120px] pr-1">
+                        Fetching current airfield report arrays from aviationweather.gov APIs...
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNS 2 & 3: INTERACTIVE GEOSPATIAL MAP & LIVE RADAR -->
+        <div class="xl:col-span-2 flex flex-col gap-4 min-h-[500px]">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex-1 flex flex-col shadow-lg">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-2 mb-3 gap-2">
+                    <div>
+                        <h2 class="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                            <i class="fa-solid fa-map-location-dot text-teal-400"></i> Tactical Map Display System
+                        </h2>
+                    </div>
+                    <!-- Direct Site Data Links Layer Controls -->
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="toggleRadar()" id="radar-toggle-btn" class="bg-teal-600 text-slate-950 px-2.5 py-1 rounded text-xs font-black shadow-md hover:bg-teal-500 transition">
+                            <i class="fa-solid fa-cloud-showers-water"></i> RADAR: ON
+                        </button>
+                        <a href="https://adsbexchange.com" target="_blank" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-2.5 py-1 rounded text-xs flex items-center gap-1 transition">
+                            <i class="fa-solid fa-radar text-green-400"></i> ADSB-Ex ↗
+                        </a>
+                        <a href="https://skyvector.com" target="_blank" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-2.5 py-1 rounded text-xs flex items-center gap-1 transition">
+                            <i class="fa-solid fa-map text-blue-400"></i> SkyVector ↗
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Leaflet Framework Application Container -->
+                <div id="dashboard-map" class="flex-1 w-full rounded-lg border border-slate-950 bg-slate-950 shadow-inner"></div>
+            </div>
+        </div>
+
+        <!-- COLUMN 4: FLIGHT TRAFFIC BOARDS & REGULATORY FEEDS -->
+        <div class="xl:col-span-1 flex flex-col gap-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col h-full shadow-lg">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-800 pb-2 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-plane-arrival text-teal-400"></i> Dynamic Log Pipelines
+                </h2>
+
+                <!-- Network Redirection Actions Dashboard -->
+                <div class="grid grid-cols-2 gap-2 mb-4 text-center">
+                    <a href="https://flightaware.com" target="_blank" class="bg-slate-950 hover:bg-slate-800 border border-slate-800 p-2.5 rounded-lg transition flex flex-col items-center justify-center gap-1 group">
+                        <i class="fa-solid fa-plane-up text-blue-400 group-hover:scale-110 transition"></i>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">FlightAware KFLV</span>
+                    </a>
+                    <a href="https://skyscanner.com" target="_blank" class="bg-slate-950 hover:bg-slate-800 border border-slate-800 p-2.5 rounded-lg transition flex flex-col items-center justify-center gap-1 group">
+                        <i class="fa-solid fa-building-shield text-indigo-400 group-hover:scale-110 transition"></i>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">MCI Arrivals Board</span>
+                    </a>
+                    <a href="https://faa.gov" target="_blank" class="bg-slate-950 hover:bg-slate-800 border border-slate-800 p-2.5 rounded-lg transition flex flex-col items-center justify-center gap-1 group">
